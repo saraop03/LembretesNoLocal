@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List
 from geopy.distance import geodesic
 import time
+import json
+import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
@@ -13,7 +15,8 @@ app = FastAPI()
 lembretes = []
 historico = {}
 
-cred = credentials.Certificate("serviceAccountKey.json")  # substitui com o teu ficheiro real
+firebase_json = os.getenv("FIREBASE_CREDENTIALS")
+cred = credentials.Certificate(json.loads(firebase_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
