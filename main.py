@@ -15,8 +15,9 @@ app = FastAPI()
 lembretes = []
 historico = {}
 
-firebase_json = os.getenv("FIREBASE_CREDENTIALS")
+firebase_json = os.getenv("FIREBASE_JSON")
 cred = credentials.Certificate(json.loads(firebase_json))
+initialize_app(cred)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
