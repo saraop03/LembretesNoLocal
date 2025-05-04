@@ -17,6 +17,9 @@ lembretes = []
 historico = {}
 
 firebase_json = os.getenv("FIREBASE_JSON")
+if not firebase_json:
+    raise ValueError("FIREBASE_JSON não está definido nas variáveis de ambiente")
+
 cred = credentials.Certificate(json.loads(firebase_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
