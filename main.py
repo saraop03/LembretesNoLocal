@@ -9,7 +9,8 @@ import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
-from firebase_admin import credentials, messaging, firestore
+from firebase_admin import credentials, messaging, firestore, initialize_app
+
 
 app = FastAPI()
 lembretes = []
