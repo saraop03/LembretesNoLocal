@@ -72,7 +72,8 @@ def verificar(lat: float, lon: float):
         for doc in docs:
             lembrete = doc.to_dict()
             distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
-            margem = 100 #+ velocidade * 5
+            margem = 100 + velocidade * 5
+            margem = max(100, min(margem, 500))
             if distancia <= margem:
                 proximos.append(lembrete)
 
