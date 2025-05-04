@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
@@ -14,11 +13,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
 from firebase_admin import credentials, messaging, firestore, initialize_app
 
-
 app = FastAPI()
 lembretes = []
 historico = {}
 
+# 🔐 Firebase setup
 firebase_json = os.getenv("FIREBASE_JSON")
 if not firebase_json:
     raise ValueError("FIREBASE_JSON não está definido nas variáveis de ambiente")
@@ -27,16 +26,28 @@ cred = credentials.Certificate(json.loads(firebase_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+# 📌 Modelos
 class Lembrete(BaseModel):
     mensagem: str
     latitude: float
     longitude: float
 
+class Token(BaseModel):
+    token: str
+
+# 📝 Guardar lembrete
 @app.post("/lembretes")
 def criar_lembrete(lembrete: Lembrete):
     db.collection("lembretes").add(lembrete.dict())
     return {"status": "lembrete guardado"}
 
+# 🔐 Registar token do utilizador
+@app.post("/registar_token")
+def registar_token(token: Token):
+    db.collection("tokens").add(token.dict())
+    return {"status": "token registado"}
+
+# 📍 Verificar localização e enviar notificações se necessário
 @app.get("/verificar/{lat}/{lon}")
 def verificar(lat: float, lon: float):
     try:
@@ -65,6 +76,25 @@ def verificar(lat: float, lon: float):
             if distancia <= margem:
                 proximos.append(lembrete)
 
+                # 🔔 Enviar notificação para cada token registado
+                tokens_ref = db.collection("tokens").stream()
+                for token_doc in tokens_ref:
+                    token_data = token_doc.to_dict()
+                    token = token_data.get("token")
+                    if token:
+                        message = messaging.Message(
+                            notification=messaging.Notification(
+                                title="📍 Estás perto de um lembrete!",
+                                body=lembrete["mensagem"]
+                            ),
+                            token=token
+                        )
+                        try:
+                            response = messaging.send(message)
+                            print(f"✅ Notificação enviada: {response}")
+                        except Exception as e:
+                            print(f"❌ Erro ao enviar notificação: {e}")
+
         print("✅ Verificação concluída com sucesso")
         return proximos
 
@@ -73,6 +103,7 @@ def verificar(lat: float, lon: float):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"detail": "Erro interno"})
 
+# 🕒 Agendamento de verificação (ainda sem lógica de múltiplos utilizadores)
 def verificar_todos_utilizadores():
     print("Verificação automática a correr...")
 
