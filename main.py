@@ -69,7 +69,7 @@ def registar_token(token: Token):
         # Verifique se o token é válido antes de tentar salvar
         if not token.token or not isinstance(token.token, str):
             return JSONResponse(status_code=400, content={"detail": "Token inválido"})
-
+        print(f"Registrando token: {token.token}")
         # Registre o token no Firestore
         db.collection("tokens").add(token.dict())
         return {"status": "token registado com sucesso"}
