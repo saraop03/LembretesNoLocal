@@ -63,11 +63,21 @@ def criar_lembrete(lembrete: Lembrete):
     db.collection("lembretes").add(lembrete.dict())
     return {"status": "lembrete guardado"}
 
-# 🔐 Registar token do utilizador
 @app.post("/registar_token")
 def registar_token(token: Token):
-    db.collection("tokens").add(token.dict())
-    return {"status": "token registado"}
+    try:
+        # Verifique se o token é válido antes de tentar salvar
+        if not token.token or not isinstance(token.token, str):
+            return JSONResponse(status_code=400, content={"detail": "Token inválido"})
+
+        # Registre o token no Firestore
+        db.collection("tokens").add(token.dict())
+        return {"status": "token registado com sucesso"}
+
+    except Exception as e:
+        print(f"Erro ao registrar o token: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Erro ao registrar token"})
+
 
 # 📍 Verificar localização e enviar notificações se necessário
 @app.get("/verificar/{lat}/{lon}")
