@@ -5,13 +5,14 @@ from geopy.distance import geodesic
 import time
 import json
 import os
+import requests
 
 from fastapi.responses import JSONResponse
 import traceback
 
 from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
-from firebase_admin import credentials, messaging, firestore, initialize_app
+from firebase_admin import credentials, firestore
 
 app = FastAPI()
 lembretes = []
@@ -25,6 +26,27 @@ if not firebase_json:
 cred = credentials.Certificate(json.loads(firebase_json))
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
+
+# 📤 Enviar notificação via Expo
+def enviar_notificacao_expo(token, title, body):
+    if not token.startswith("ExponentPushToken"):
+        print(f"❌ Token inválido: {token}")
+        return
+
+    payload = {
+        "to": token,
+        "title": title,
+        "body": body,
+        "sound": "default"
+    }
+
+    try:
+        response = requests.post(EXPO_PUSH_URL, json=payload)
+        print(f"📬 Expo status: {response.status_code} | {response.text}")
+    except Exception as e:
+        print(f"❌ Erro ao enviar via Expo: {e}")
 
 # 📌 Modelos
 class Lembrete(BaseModel):
@@ -77,24 +99,13 @@ def verificar(lat: float, lon: float):
             if distancia <= margem:
                 proximos.append(lembrete)
 
-                # 🔔 Enviar notificação para cada token registado
+                # 🔔 Enviar notificação via Expo
                 tokens_ref = db.collection("tokens").stream()
                 for token_doc in tokens_ref:
                     token_data = token_doc.to_dict()
                     token = token_data.get("token")
                     if token:
-                        message = messaging.Message(
-                            notification=messaging.Notification(
-                                title="📍 Estás perto de um lembrete!",
-                                body=lembrete["mensagem"]
-                            ),
-                            token=token
-                        )
-                        try:
-                            response = messaging.send(message)
-                            print(f"✅ Notificação enviada: {response}")
-                        except Exception as e:
-                            print(f"❌ Erro ao enviar notificação: {e}")
+                        enviar_notificacao_expo(token, "📍 Estás perto de um lembrete!", lembrete["mensagem"])
 
         print("✅ Verificação concluída com sucesso")
         return proximos
@@ -104,7 +115,7 @@ def verificar(lat: float, lon: float):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"detail": "Erro interno"})
 
-# 🕒 Agendamento de verificação (ainda sem lógica de múltiplos utilizadores)
+# 🕒 Agendamento de verificação (placeholder)
 def verificar_todos_utilizadores():
     print("Verificação automática a correr...")
 
