@@ -63,7 +63,7 @@ def criar_lembrete(lembrete: Lembrete):
     db.collection("lembretes").add(lembrete.dict())
     return {"status": "lembrete guardado"}
 
-@app.post("/registar_token")
+@app.post("/tokens")
 def registar_token(token: Token):
     try:
         # Verifique se o token é válido antes de tentar salvar
