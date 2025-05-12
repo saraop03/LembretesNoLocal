@@ -116,19 +116,22 @@ def verificar(lat: float, lon: float):
 
         for doc in docs:
             lembrete = doc.to_dict()
+            if not lembrete.get("ativo", True):
+                continue  # ignorar lembretes inativos
+        
             distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
             margem = 100 + velocidade * 5
-            #margem = max(100, min(margem, 500))
             if distancia <= margem:
+                lembrete["id"] = doc.id  # incluir o ID para o app poder desativar depois
                 proximos.append(lembrete)
-
-                # 🔔 Enviar notificação via Expo
+        
                 tokens_ref = db.collection("tokens").stream()
                 for token_doc in tokens_ref:
                     token_data = token_doc.to_dict()
                     token = token_data.get("token")
                     if token:
                         enviar_notificacao_expo(token, "📍 Estás perto de um lembrete!", lembrete["mensagem"])
+
 
         print("✅ Verificação concluída com sucesso")
         return proximos
