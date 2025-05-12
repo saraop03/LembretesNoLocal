@@ -121,7 +121,7 @@ def verificar(lat: float, lon: float):
             distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
             margem = 100 + velocidade * 5
             if distancia <= margem:
-                lembrete["id"] = doc.id  # incluir o ID para o app poder desativar depois
+                lembrete["id"] = doc.id
                 proximos.append(lembrete)
         
                 tokens_ref = db.collection("tokens").stream()
