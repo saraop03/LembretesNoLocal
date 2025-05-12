@@ -115,22 +115,36 @@ def verificar(lat: float, lon: float):
 
         for doc in docs:
             lembrete = doc.to_dict()
+
+            # Ignora lembretes inativos
             if not lembrete.get("ativo", True):
-                continue  # ignorar lembretes inativos
-        
-            distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
+                continue
+
+            # Validação para garantir que o lembrete tem os campos necessários
+            if 'latitude' not in lembrete or 'longitude' not in lembrete or 'mensagem' not in lembrete:
+                print(f"❌ Lembrete inválido (faltam campos): {lembrete}")
+                continue
+
+            try:
+                # Calcular a distância entre o usuário e o lembrete
+                distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
+            except Exception as e:
+                print(f"❌ Erro ao calcular distância para o lembrete {lembrete['mensagem']}: {e}")
+                continue
+
+            # Definir margem de proximidade com base na velocidade
             margem = 100 + velocidade * 5
             if distancia <= margem:
                 lembrete["id"] = doc.id
                 proximos.append(lembrete)
-        
+
+                # Enviar notificações para os tokens registrados
                 tokens_ref = db.collection("tokens").stream()
                 for token_doc in tokens_ref:
                     token_data = token_doc.to_dict()
                     token = token_data.get("token")
                     if token:
                         enviar_notificacao_expo(token, "📍 Estás perto de um lembrete!", lembrete["mensagem"])
-
 
         print("✅ Verificação concluída com sucesso")
         return proximos
@@ -139,6 +153,7 @@ def verificar(lat: float, lon: float):
         print("❌ ERRO INTERNO no /verificar:")
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"detail": "Erro interno"})
+
 
 # 🕒 Agendamento de verificação (placeholder)
 def verificar_todos_utilizadores():
