@@ -61,9 +61,7 @@ class Token(BaseModel):
 # 📝 Guardar lembrete
 @app.post("/lembretes")
 def criar_lembrete(lembrete: Lembrete):
-    lembrete_dict = lembrete.dict()
-    lembrete_dict["ativo"] = True
-    db.collection("lembretes").add(lembrete._dict)
+    db.collection("lembretes").add(lembrete.dict())
     return {"status": "lembrete guardado"}
 
 @app.patch("/lembretes/{lembrete_id}/desativar")
