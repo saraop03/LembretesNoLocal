@@ -60,8 +60,21 @@ class Token(BaseModel):
 # 📝 Guardar lembrete
 @app.post("/lembretes")
 def criar_lembrete(lembrete: Lembrete):
-    db.collection("lembretes").add(lembrete.dict())
+    lembrete_dict = lembrete.dict()
+    lembrete_dict["ativo"] = True
+    db.collection("lembretes").add(lembrete._dict)
     return {"status": "lembrete guardado"}
+
+@app.patch("/lembretes/{lembrete_id}/desativar")
+def desativar_lembrete(lembrete_id: str):
+    try:
+        ref = db.collection("lembretes").document(lembrete_id)
+        ref.update({"ativo": False})
+        return {"status": "lembrete desativado"}
+    except Exception as e:
+        print(f"❌ Erro ao desativar lembrete: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Erro ao desativar lembrete"})
+
 
 @app.post("/tokens")
 def registar_token(token: Token):
