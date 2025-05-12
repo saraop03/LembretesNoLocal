@@ -53,6 +53,7 @@ class Lembrete(BaseModel):
     mensagem: str
     latitude: float
     longitude: float
+    ativo: str
 
 class Token(BaseModel):
     token: str
