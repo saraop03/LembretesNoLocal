@@ -14,6 +14,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+from fastapi import Query
+
 app = FastAPI()
 lembretes = []
 historico = {}
@@ -93,7 +95,7 @@ def registar_token(token: Token):
 
 # 📍 Verificar localização e enviar notificações se necessário
 @app.get("/verificar/{lat}/{lon}")
-def verificar(lat: float, lon: float):
+def verificar(lat: float, lon: float, token: str = Query(...)):
     try:
         print("✅ Endpoint /verificar chamado")
         user_id = "user1"
@@ -111,42 +113,24 @@ def verificar(lat: float, lon: float):
 
         proximos = []
         docs = db.collection("lembretes").stream()
-        print("🔍 A ler lembretes do Firestore")
 
         for doc in docs:
             lembrete = doc.to_dict()
-
-            # Ignora lembretes inativos
             if not lembrete.get("ativo", True):
                 continue
-
-            # Validação para garantir que o lembrete tem os campos necessários
             if 'latitude' not in lembrete or 'longitude' not in lembrete or 'mensagem' not in lembrete:
-                print(f"❌ Lembrete inválido (faltam campos): {lembrete}")
                 continue
 
-            try:
-                # Calcular a distância entre o usuário e o lembrete
-                distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
-            except Exception as e:
-                print(f"❌ Erro ao calcular distância para o lembrete {lembrete['mensagem']}: {e}")
-                continue
-
-            # Definir margem de proximidade com base na velocidade
+            distancia = geodesic(user_location, (lembrete['latitude'], lembrete['longitude'])).meters
             margem = 100 + velocidade * 5
+
             if distancia <= margem:
                 lembrete["id"] = doc.id
                 proximos.append(lembrete)
 
-                # Enviar notificações para os tokens registrados
-                tokens_ref = db.collection("tokens").stream()
-                for token_doc in tokens_ref:
-                    token_data = token_doc.to_dict()
-                    token = token_data.get("token")
-                    if token:
-                        enviar_notificacao_expo(token, "📍 Estás perto de um lembrete!", lembrete["mensagem"])
+                # ✅ Enviar apenas para o token do cliente que está próximo
+                enviar_notificacao_expo(token, "📍 Estás perto de um lembrete!", lembrete["mensagem"])
 
-        print("✅ Verificação concluída com sucesso")
         return proximos
 
     except Exception as e:
