@@ -66,6 +66,21 @@ def criar_lembrete(lembrete: Lembrete):
     db.collection("lembretes").add(lembrete.dict())
     return {"status": "lembrete guardado"}
 
+@app.get("/lembretes")
+def listar_lembretes():
+    try:
+        docs = db.collection("lembretes").stream()
+        resultado = []
+        for doc in docs:
+            lembrete = doc.to_dict()
+            lembrete["id"] = doc.id
+            resultado.append(lembrete)
+        return resultado
+    except Exception as e:
+        print("❌ Erro ao listar lembretes:", e)
+        return JSONResponse(status_code=500, content={"detail": "Erro ao listar lembretes"})
+
+
 @app.patch("/lembretes/{lembrete_id}/desativar")
 def desativar_lembrete(lembrete_id: str):
     try:
