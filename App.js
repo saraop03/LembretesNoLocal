@@ -90,7 +90,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Mensagem do Lembrete"
+        placeholder="Mensagem do Lembreteeeeeee"
         onChangeText={setLembrete}
         style={styles.input}
       />
