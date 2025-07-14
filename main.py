@@ -113,6 +113,7 @@ def registar_token(token: Token):
 def verificar(lat: float, lon: float, token: str = Query(...)):
     try:
         print("✅ Endpoint /verificar chamado")
+        print(f"🔍 Verificando para lat={lat}, lon={lon}, token={token[:10]}...")
         user_id = "user1"
         now = time.time()
         user_location = (lat, lon)
